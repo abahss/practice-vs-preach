@@ -5,3 +5,6 @@ tmp/
 prp/__pycache__
 
 german_manifestos/
+
+.terraform/
+tf.plan
