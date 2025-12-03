@@ -16,46 +16,38 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_text_splitters import NLTKTextSplitter
 
-from dotenv import load_dotenv
+from practicepreach.params import *
 
 class Rag:
     def __init__(self):
-        """Initialize environment variables and any other setup."""
-        load_dotenv()  # Load environment variables from .env file
-
-        PERSIST_DB = os.environ.get("PERSIST_DB")
-
-        df = pd.read_csv("data/speeches-wahlperiode-21.csv")
 
         self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
         self.model = init_chat_model("google_genai:gemini-2.5-flash-lite")
 
-        prompt_template = ChatPromptTemplate.from_messages([
+        self.prompt_template = ChatPromptTemplate.from_messages([
             ("system", "You are a helpful assistant. Use the following context to answer the question. Use maximum 7 sentences. Use specific terms. Highlight important ones."),
             ("human", """Context: {context}  Question: {question}""")
         ])
 
-        example_messages = prompt_template.invoke(
+        self.example_messages = self.prompt_template.invoke(
             {"context": "(context goes here)", "question": "(question goes here)"}
         ).to_messages()
 
         self.vector_store = Chroma(
             collection_name="political_collection",
-            persist_directory="chroma_store",
+            persist_directory=PERSIST_DIR,
             embedding_function=self.embeddings,
         )
 
-        loader = CSVLoader(file_path="data/speeches-wahlperiode-21.csv",
-                   metadata_columns=['date','id','party'])
-        data = loader.load()
-
-        text_splitter = NLTKTextSplitter(
-            chunk_size=500,
-            chunk_overlap=200
-        )
-
         num_of_stored = self.vector_store._collection.count()
+
         if num_of_stored == 0:
+            loader = CSVLoader(file_path=SPEECHES_CSV, metadata_columns=['date','id','party'])
+            data = loader.load()
+            text_splitter = NLTKTextSplitter(
+                chunk_size=500,
+                chunk_overlap=200
+            )
             num_of_chunks = self.embed_and_store(data, text_splitter)
             print(f"Embedded {num_of_chunks} chunks into the vector store.")
         else:
@@ -82,12 +74,12 @@ class Rag:
         docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
 
         # If no prompt template is provided, use the default one
-        if not prompt_template:
-            prompt_template = hub.pull("rlm/rag-prompt")
+        if not self.prompt_template:
+            self.prompt_template = hub.pull("rlm/rag-prompt")
 
-        prompt = prompt_template.invoke(
+        prompt = self.prompt_template.invoke(
             {"context": docs_content, "question": query}
-     )
+        )
 
         # Get the answer from the language model
         answer = self.llm.invoke(prompt)

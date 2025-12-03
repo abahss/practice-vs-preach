@@ -1,15 +1,11 @@
 import requests, os, time, csv, sys
 import BundestagsAPy
 import pandas as pd
-from dotenv import load_dotenv
 import xmltodict
 
-load_dotenv()
+from practicepreach.params import *
 
 PARTIES_LIST = ["AfD", "SPD", "CDU/CSU", "BÜNDNIS 90/DIE GRÜNEN", "Die Linke"]
-DF_CSV = os.environ.get("DF_CSV")
-URL_LIST = os.environ.get("URL_LIST")
-API_KEY = os.environ.get("API_KEY")
 BASE = "https://search.dip.bundestag.de/api/v1"
 
 def fetch_and_parse_xml(url: str) -> dict:
@@ -163,23 +159,23 @@ def get_speeches():
                     'text': text
                 }])], ignore_index=True)
 
-    df.to_csv(DF_CSV)
+    df.to_csv(SPEECHES_CSV)
 
 def url_collector(wahlperiode=20, start_num=1, stop_num=214, start_id=866350):
-    
+
     wierd_id = start_id
     num = start_num
     in_order = True
     url_list = []
 
     while True:
-        
+
         if num > stop_num:
             break
 
         url = f"https://www.bundestag.de/resource/blob/{wierd_id}/{wahlperiode:02d}{num:03d}.xml"
         plus_one_url = f"https://www.bundestag.de/resource/blob/{wierd_id}/{wahlperiode:02d}{num+1:03d}.xml"
-        
+
         response = requests.get(url)
         if response.status_code == 200:
             url_list.append(url)
@@ -198,8 +194,8 @@ def url_collector(wahlperiode=20, start_num=1, stop_num=214, start_id=866350):
 
         wierd_id += 1
 
-    return url_list    
-    
+    return url_list
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "speeches":
@@ -211,6 +207,3 @@ if __name__ == "__main__":
             with open('speaches_test.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(url_list)
-
-
-
