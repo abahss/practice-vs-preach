@@ -15,6 +15,9 @@ locals {
 provider "google" {
   project = "lw-speech-preach"
   region  = local.location
+
+  user_project_override = true
+  billing_project       = "lw-speech-preach"
 }
 
 terraform {
