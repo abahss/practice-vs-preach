@@ -65,8 +65,8 @@ resource "google_cloud_run_v2_service" "rag_service" {
       }
     }
 
-    # # Service account (recommended for security)
-    # service_account = google_service_account.cloud_run_sa.email
+    # Service account (recommended for security)
+    service_account = google_service_account.project_sa.email
   }
 
   traffic {
@@ -74,7 +74,7 @@ resource "google_cloud_run_v2_service" "rag_service" {
     percent = 100
   }
 
-  # depends_on = [google_project_service.cloud_run]
+  depends_on = [google_project_service.cloud_run]
 }
 
 # Service publicly accessible (i.e. anyone can curl)
@@ -86,18 +86,11 @@ resource "google_cloud_run_v2_service_iam_member" "public_access" {
   member   = "allUsers"
 }
 
-# # Service account for Cloud Run
-# resource "google_service_account" "cloud_run_sa" {
-#   project      = data.google_project.project.id
-#   account_id   = "rag-cloud-run-sa"
-#   display_name = "Cloud Run Service Account for RAG"
-# }
-
 # # Grant permissions (example: access to GCS for document storage)
 # resource "google_project_iam_member" "cloud_run_storage" {
-#   project = data.google_project.project.id
+#   project = data.google_project.project.project_id
 #   role    = "roles/storage.objectViewer"
-#   member  = "serviceAccount:${google_service_account.cloud_run_sa.email}"
+#   member  = "serviceAccount:${google_service_account.project_sa.email}"
 # }
 
 # Output the service URL

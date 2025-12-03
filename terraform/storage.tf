@@ -15,3 +15,9 @@ resource "google_storage_bucket" "project-bucket" {
     retention_duration_seconds = 604800
   }
 }
+
+resource "google_storage_bucket_iam_member" "project_sa_bucket_access" {
+  bucket = google_storage_bucket.project-bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "serviceAccount:${google_service_account.project_sa.email}"
+}
