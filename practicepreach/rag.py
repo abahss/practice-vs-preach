@@ -18,19 +18,17 @@ from langchain_text_splitters import NLTKTextSplitter
 
 from dotenv import load_dotenv
 
-class RAG:
-    def __init__(self, vector_store, llm, prompt_template):
-        self.vector_store = vector_store
-        self.llm = llm
-        self.prompt_template = prompt_template
-
+class Rag:
+    def __init__(self):
         """Initialize environment variables and any other setup."""
         load_dotenv()  # Load environment variables from .env file
 
+        PERSIST_DB = os.environ.get("PERSIST_DB")
+
         df = pd.read_csv("data/speeches-wahlperiode-21.csv")
 
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
-        model = init_chat_model("google_genai:gemini-2.5-flash-lite")
+        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        self.model = init_chat_model("google_genai:gemini-2.5-flash-lite")
 
         prompt_template = ChatPromptTemplate.from_messages([
             ("system", "You are a helpful assistant. Use the following context to answer the question. Use maximum 7 sentences. Use specific terms. Highlight important ones."),
@@ -41,9 +39,10 @@ class RAG:
             {"context": "(context goes here)", "question": "(question goes here)"}
         ).to_messages()
 
-        vector_store = Chroma(
-            collection_name="example_collection",
-            embedding_function=embeddings,
+        self.vector_store = Chroma(
+            collection_name="political_collection",
+            persist_directory="chroma_store",
+            embedding_function=self.embeddings,
         )
 
         loader = CSVLoader(file_path="data/speeches-wahlperiode-21.csv",
@@ -55,33 +54,29 @@ class RAG:
             chunk_overlap=200
         )
 
-    def embed_and_store_pdf(self, file_path, vector_store, batch_size=200):
-        """Load a PDF file, split it into chunks, and store the chunks in a vector store."""
-        # Load the PDF file
-        loader = PyPDFLoader(file_path, mode="single")
-        pdf = loader.load()
+        num_of_stored = self.vector_store._collection.count()
+        if num_of_stored == 0:
+            num_of_chunks = self.embed_and_store(data, text_splitter)
+            print(f"Embedded {num_of_chunks} chunks into the vector store.")
+        else:
+            print(f"Vector store already has {num_of_stored} vectores. Skipping embedding.")
 
+    def embed_and_store(self, doc, text_splitter, batch_size=200):
+        """Split JSON-loaded documents into chunks and store them in a vector store."""
         # Split the pages into chunks
-        all_splits = text_splitter.split_documents(pdf)
-
-        # Add the party name to the metadata
-        pattern = r"(?<=data/)[^_]+(?=_)"
-        party_name = re.search(pattern, file_path)
-
-        for split in all_splits:
-            split.metadata["party_name"] = party_name.group()
+        all_splits = text_splitter.split_documents(doc)
 
         # Add the chunks to the vector store in batches
         for i in range(0, len(all_splits), batch_size):
             batch = all_splits[i:i + batch_size]
-            vector_store.add_documents(documents=batch)
+            self.vector_store.add_documents(documents=batch)
 
-        return f"{file_path} embedded"
+        return f"{len(all_splits)} chunks embedded"
 
-    def answer(self, query, vector_store, llm, file, prompt_template=None):
+    def answer(self, query, file, prompt_template=None):
         """Answer a query using the vector store and the language model."""
         # Retrieve similar documents from the vector store
-        retrieved_docs = vector_store.similarity_search(query,k=50, filter={'source': file})
+        retrieved_docs = self.vector_store.similarity_search(query,k=50, filter={'source': file})
 
         # Create the prompt
         docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
@@ -95,7 +90,7 @@ class RAG:
      )
 
         # Get the answer from the language model
-        answer = llm.invoke(prompt)
+        answer = self.llm.invoke(prompt)
         return answer.content
 
     def shutdown(self):

@@ -11,6 +11,7 @@ async def lifespan(app: FastAPI):
 
     app.state.rag = Rag()
 
+    print("Starting is complete.")
     yield
 
     # e.g. close DB connection, free resources
