@@ -1,10 +1,8 @@
 .env
+.DS_Store
 tmp/
 .venv/
-.DS_Store
 prp/__pycache__
-
 german_manifestos/
-
 .terraform/
 tf.plan
