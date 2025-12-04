@@ -16,6 +16,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_text_splitters import NLTKTextSplitter
 
+from datetime import datetime
+
 from practicepreach.params import *
 
 class Rag:
@@ -42,8 +44,14 @@ class Rag:
         num_of_stored = self.vector_store._collection.count()
 
         if num_of_stored == 0:
-            loader = CSVLoader(file_path=SPEECHES_CSV, metadata_columns=['date','id','party'])
+            loader = CSVLoader(file_path=SPEECHES_CSV, metadata_columns=['date','id','party','type'])
+
             data = loader.load()
+
+            for doc in data:
+                date_str = doc.metadata["date"]   # e.g. "27.11.2025"
+                doc.metadata["date"] = self.convert_date_eu_to_int(date_str)
+
             text_splitter = NLTKTextSplitter(
                 chunk_size=500,
                 chunk_overlap=200
@@ -52,6 +60,12 @@ class Rag:
             print(f"Embedded {num_of_chunks} chunks into the vector store.")
         else:
             print(f"Vector store already has {num_of_stored} vectores. Skipping embedding.")
+
+
+    def convert_date_eu_to_int(self,date_str: str) -> int:
+        """Convert 'DD.MM.YYYY' → 20251127."""
+        dt = datetime.strptime(date_str, "%d.%m.%Y")
+        return int(dt.strftime("%Y%m%d"))
 
     def embed_and_store(self, doc, text_splitter, batch_size=200):
         """Split JSON-loaded documents into chunks and store them in a vector store."""
@@ -66,8 +80,12 @@ class Rag:
         return f"{len(all_splits)} chunks embedded"
 
 
-    def retrieve_topic_chunks(self, query, party, date):
-        filter={'$and': [{'party': {'$eq': party}}, {'date': {'$eq': date}}]}
+    def retrieve_topic_chunks(self, query, party, start_date, end_date):
+
+        start_date_int = int(start_date.strftime("%Y%m%d"))
+        end_date_int =int(end_date.strftime("%Y%m%d"))
+
+        filter={'$and': [{'party': {'$eq': party}}, {'date': {'$gt':start_date_int}}, {'date': {'$lt': end_date_int}}]}
 
         # Retrieve similar documents from the vector store
         retrieved_docs = self.vector_store.similarity_search(query,k=50, filter=filter)
@@ -75,10 +93,10 @@ class Rag:
         return retrieved_docs
 
 
-    def answer(self, query, party, date, prompt_template=None):
+    def answer(self, query, party, start_date, end_date, prompt_template=None):
         """Answer a query using the vector store and the language model."""
 
-        retrieved_docs = self.retrieve_topic_chunks(self, query, party, date)
+        retrieved_docs = self.retrieve_topic_chunks(self, query, party, start_date, end_date)
 
         # Create the prompt
         docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
