@@ -85,11 +85,13 @@ class Rag:
         return f"{len(all_splits)} chunks embedded"
 
 
-    def retrieve_topic_chunks(self, query, party, start_date, end_date):
+    def retrieve_topic_chunks(self, query, party, start_date, end_date, type = None):
+
 
         start_date_int = int(start_date.strftime("%Y%m%d"))
         end_date_int =int(end_date.strftime("%Y%m%d"))
 
+        #ToDo: !!once the csv had a populated type column, add it here to make it queriable
         filter={'$and': [{'party': {'$eq': party}}, {'date': {'$gt':start_date_int}}, {'date': {'$lt': end_date_int}}]}
 
         # Retrieve similar documents from the vector store
