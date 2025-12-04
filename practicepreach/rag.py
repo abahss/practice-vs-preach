@@ -66,6 +66,9 @@ class Rag:
         else:
             print(f"Vector store already has {num_of_stored} vectores. Skipping embedding.")
 
+    def add_to_vector_store(self, doc, text_splitter):
+        """Add new documents to the vector store from CSV file"""
+        pass
 
     def convert_date_eu_to_int(self,date_str: str) -> int:
         """Convert 'DD.MM.YYYY' → 20251127."""
