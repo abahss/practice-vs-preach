@@ -27,8 +27,18 @@ from practicepreach.params import *
 
 class Rag:
     def __init__(self):
+        # Debugging
+        if GOOGLE_API_KEY:
+            masked_api_key = '*' * len(GOOGLE_API_KEY)
+            print(f"Masked API Key: {masked_api_key}")
+        else:
+            print("API Key not found in environment variables.")
 
-        self.embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+        self.embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004",
+            google_api_key=os.getenv("GOOGLE_API_KEY"),
+            credentials=None  # Explicitly disable ADC
+        )
         self.model = init_chat_model("google_genai:gemini-2.5-flash-lite")
 
         self.prompt_template = ChatPromptTemplate.from_messages([
@@ -49,26 +59,27 @@ class Rag:
         num_of_stored = self.vector_store._collection.count()
 
         if num_of_stored == 0:
-            loader = CSVLoader(file_path=SPEECHES_CSV, metadata_columns=['date','id','party','type'])
-
-            data = loader.load()
-
-            for doc in data:
-                date_str = doc.metadata["date"]   # e.g. "27.11.2025"
-                doc.metadata["date"] = self.convert_date_eu_to_int(date_str)
-
-            text_splitter = NLTKTextSplitter(
-                chunk_size=500,
-                chunk_overlap=200
-            )
-            num_of_chunks = self.embed_and_store(data, text_splitter)
+            num_of_chunks = self.add_to_vector_store(SPEECHES_CSV)
             print(f"Embedded {num_of_chunks} chunks into the vector store.")
         else:
             print(f"Vector store already has {num_of_stored} vectores. Skipping embedding.")
 
-    def add_to_vector_store(self, doc, text_splitter):
+    def add_to_vector_store(self, file_path: str):
         """Add new documents to the vector store from CSV file"""
-        pass
+        loader = CSVLoader(file_path=file_path, metadata_columns=['date','id','party','type'])
+
+        data = loader.load()
+
+        for doc in data:
+            date_str = doc.metadata["date"]   # e.g. "27.11.2025"
+            doc.metadata["date"] = self.convert_date_eu_to_int(date_str)
+
+        text_splitter = NLTKTextSplitter(
+            chunk_size=500,
+            chunk_overlap=200
+        )
+        num_of_chunks = self.embed_and_store(data, text_splitter)
+        return num_of_chunks
 
     def convert_date_eu_to_int(self,date_str: str) -> int:
         """Convert 'DD.MM.YYYY' → 20251127."""
