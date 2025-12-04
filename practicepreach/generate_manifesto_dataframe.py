@@ -79,6 +79,12 @@ def generate_manifesto_dataframe():
     # Create DataFrame
     df = pd.DataFrame(data)
 
+    # Write CSV to data folder (same folder as speeches-wahlperiode CSVs)
+    data_dir = base_dir / 'data'
+    csv_path = data_dir / 'manifestos.csv'
+    df.to_csv(csv_path, index=False, encoding='utf-8')
+    print(f"CSV written to: {csv_path}")
+
     return df
 
 
