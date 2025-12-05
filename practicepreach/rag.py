@@ -13,6 +13,7 @@ from langchain_text_splitters import NLTKTextSplitter
 from datetime import datetime
 
 from practicepreach.params import *
+from practicepreach.alignment import analyze_tone_differences
 
 # Debug http calls.
 # http_client.HTTPConnection.debuglevel = 0
@@ -40,10 +41,6 @@ class Rag:
             ("system", "You are a helpful assistant. Use the following context to answer the question. Use maximum 7 sentences. Use specific terms. Highlight important ones."),
             ("human", """Context: {context}  Question: {question}""")
         ])
-
-        self.example_messages = self.prompt_template.invoke(
-            {"context": "(context goes here)", "question": "(question goes here)"}
-        ).to_messages()
 
         self.vector_store = Chroma(
             collection_name="political_collection",
@@ -97,13 +94,22 @@ class Rag:
         return f"{len(all_splits)} chunks embedded"
 
 
-    def retrieve_topic_chunks(self, query, party, start_date:datetime, end_date:datetime):
-
+    def retrieve_topic_chunks(
+            self,
+            query, party,
+            start_date:datetime, end_date:datetime,
+            doctype: str,
+    ):
         start_date_int = int(start_date.strftime("%Y%m%d"))
         end_date_int =int(end_date.strftime("%Y%m%d"))
 
         #ToDo: !!once the csv had a populated type column, add it here to make it queriable
-        filter={'$and': [{'party': {'$eq': party}}, {'date': {'$gt':start_date_int}}, {'date': {'$lt': end_date_int}}]}#, {'type': {'$eq': doctype}}]}
+        filter={'$and': [
+            {'party': {'$eq': party}},
+            {'date': {'$gt':start_date_int}},
+            {'date': {'$lt': end_date_int}},
+            {'type': {'$eq': doctype}},
+        ]}
 
         # Retrieve similar documents from the vector store
         retrieved_docs = self.vector_store.similarity_search(query,k=50, filter=filter)
@@ -114,22 +120,24 @@ class Rag:
     def answer(self, query, party, start_date:datetime, end_date:datetime, prompt_template=None):
         """Answer a query using the vector store and the language model."""
 
-        retrieved_docs = self.retrieve_topic_chunks(query, party, start_date, end_date)
+        speech_docs = self.retrieve_topic_chunks(query, party, start_date,
+                                                 end_date, 'speech')
+        manifesto_docs = self.retrieve_topic_chunks(query, party, start_date,
+                                                    end_date, 'manifesto')
 
         # Create the prompt
-        docs_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
+        speech_content = "\n\n".join(doc.page_content for doc in speech_docs)
+        manifesto_content = "\n\n".join(doc.page_content for doc in manifesto_docs)
 
-        # If no prompt template is provided, use the default one
-        if not self.prompt_template:
-            self.prompt_template = hub.pull("rlm/rag-prompt")
+        label = analyze_tone_differences(manifesto_content, speech_content, self.model)
 
         prompt = self.prompt_template.invoke(
-            {"context": docs_content, "question": query}
+            {"context": speech_content, "question": query}
         )
 
         # Get the answer from the language model
         answer = self.model.invoke(prompt)
-        return answer.content
+        return (answer.content, label)
 
     def shutdown(self):
         """Clean up resources if needed."""

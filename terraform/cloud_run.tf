@@ -59,7 +59,7 @@ resource "google_cloud_run_v2_service" "rag_service" {
       resources {
         limits = {
           cpu    = "2"
-          memory = "2Gi"
+          memory = "8Gi"
         }
         startup_cpu_boost = true
       }

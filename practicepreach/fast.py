@@ -60,11 +60,8 @@ def get_summary(topic: str, start_date: str, end_date: str):
 
     summaries = {} # party → {'summary':"blbal", 'label':"Aligns…"}
     for party in constants.PARTIES_LIST:
-        import random
-        label = random.choice(ALIGNEMENT_LABELS)
-
-        summary = rag.answer(query, party, dt_start, dt_end)
-        if summary is not None:
+        (summary, label) = rag.answer(query, party, dt_start, dt_end)
+        if summary is not None and label is not None:
             summaries[party] = {'summary': summary, 'label': label}
 
     return summaries
