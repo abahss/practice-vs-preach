@@ -73,7 +73,6 @@ class Rag:
     def add_to_vector_store(self, path_to_file: str):
         """Add new documents to the vector store from CSV file"""
         logger.info(f'Processing file: {path_to_file}')
-        time.sleep(10)
 
         loader = CSVLoader(file_path=path_to_file, metadata_columns=['date','id','party','type'])
 
