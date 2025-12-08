@@ -129,8 +129,7 @@ class Rag:
             batch = all_splits[i:i + batch_size]
             self.vector_store.add_documents(documents=batch)
 
-        return f"{num_of_splits} chunks embedded"
-
+        return num_of_splits
 
     def retrieve_topic_chunks(
             self,
