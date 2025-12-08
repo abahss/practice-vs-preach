@@ -1,3 +1,3 @@
-#!/bin/bash
+#!/bin/sh
 
-uv run python -m practicepreach.tools vectorize $1 
+uv run python -m practicepreach.tools vectorize $1

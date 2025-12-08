@@ -173,7 +173,9 @@ if __name__ == "__main__":
             print("Getting speeches...")
             get_speeches(sys.argv[2], sys.argv[3])
         elif sys.argv[1] == "vectorize":
-            print("Vectorizing data...")
-            rag = Rag()
-            num_of_chunks = rag.add_to_vector_store(sys.argv[2])
+            file_to_process = sys.argv[2]
+            print(f"Vectorizing {file_to_process}...")
+            rag = Rag(populate_vector_store=False)
+            print(f'{rag.get_num_of_vectors()} vectors currently in the vector store.')
+            num_of_chunks = rag.add_to_vector_store(path_to_file=file_to_process)
             print(f"Embedded {num_of_chunks} chunks into the vector store.")

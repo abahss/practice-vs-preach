@@ -27,7 +27,7 @@ from practicepreach.wahlperiode_converter import *
 logger = logging.getLogger(__name__)
 
 class Rag:
-    def __init__(self):
+    def __init__(self, populate_vector_store: bool = True):
         # Debugging
         if GOOGLE_API_KEY:
             masked_api_key = '*' * len(GOOGLE_API_KEY)
@@ -55,7 +55,7 @@ class Rag:
 
         num_of_stored = self.vector_store._collection.count()
 
-        if num_of_stored == 0:
+        if num_of_stored == 0 and populate_vector_store:
             if is_cloud_run():
                 df = load_csv_from_gcs(DATA_CVS)
                 num_of_chunks_speech = self.add_to_vector_store(df)
@@ -66,12 +66,16 @@ class Rag:
         else:
             logger.info(f"Vector store already has {num_of_stored} vectores. Skipping embedding.")
 
-    def add_to_vector_store(self, file_path: str):
+    def get_num_of_vectors(self) -> int:
+        """Get the number of vectors stored in the vector store."""
+        return self.vector_store._collection.count()
+
+    def add_to_vector_store(self, path_to_file: str):
         """Add new documents to the vector store from CSV file"""
-        print(f'Processing file: {file_path}')
+        print(f'Processing file: {path_to_file}')
         time.sleep(10)
 
-        loader = CSVLoader(file_path=file_path, metadata_columns=['date','id','party','type'])
+        loader = CSVLoader(file_path=path_to_file, metadata_columns=['date','id','party','type'])
 
         data = loader.load()
 
