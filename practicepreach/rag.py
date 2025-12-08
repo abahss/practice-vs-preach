@@ -11,6 +11,7 @@ from langchain_community.document_loaders.csv_loader import CSVLoader
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import NLTKTextSplitter
+from langchain_core.documents import Document
 
 from datetime import datetime
 
@@ -70,17 +71,30 @@ class Rag:
         """Get the number of vectors stored in the vector store."""
         return self.vector_store._collection.count()
 
-    def add_to_vector_store(self, path_to_file: str):
+    def df_to_documents(df, content_col, meta_cols=None):
+        docs = []
+        meta_cols = meta_cols or []
+
+        for _, row in df.iterrows():
+            content = str(row[content_col])
+            metadata = {col: row[col] for col in meta_cols}
+            docs.append(Document(page_content=content, metadata=metadata))
+
+        return docs
+
+    def add_to_vector_store(self, data_source):
         """Add new documents to the vector store from CSV file"""
-        logger.info(f'Processing file: {path_to_file}')
-
-        loader = CSVLoader(file_path=path_to_file, metadata_columns=['date','id','party','type'])
-
-        data = loader.load()
+        if is_cloud_run():
+            logger.info('Processing provided dataframe.')
+            data = self.df_to_documents(data_source, content_col='text', meta_columns=['date','id','party','type'])
+        else:
+            logger.info(f'Processing file: {data_source}')
+            loader = CSVLoader(file_path=data_source, metadata_columns=['date','id','party','type'])
+            data = loader.load()
 
         for doc in data:
             date_str = doc.metadata["date"]   # e.g. "27.11.2025"
-            doc.metadata["date"] = self.convert_date_eu_to_int(date_str)
+        doc.metadata["date"] = self.convert_date_eu_to_int(date_str)
 
         text_splitter = NLTKTextSplitter(
             chunk_size=500,
@@ -94,27 +108,6 @@ class Rag:
         dt = datetime.strptime(date_str, "%d.%m.%Y")
         return int(dt.strftime("%Y%m%d"))
 
-    def manual_embed_and_store(self, doc, text_splitter, batch_size=10):
-        all_splits = text_splitter.split_documents(doc)
-        num_of_splits = len(all_splits)
-        logger.info(f"Total chunks to embed: {num_of_splits}")
-
-        for i in range(0, num_of_splits, batch_size):
-            batch_docs = all_splits[i:i + batch_size]
-
-            # Extract text list
-            texts = [d.page_content for d in batch_docs]
-
-            # Embed with manual batching
-            embeddings = self.embeddings.embed_documents(texts)
-
-            # Add with precomputed embeddings
-            self.vector_store.add_documents(
-                documents=batch_docs,
-                embeddings=embeddings
-            )
-
-        return f"{num_of_splits} chunks embedded"
 
     def embed_and_store(self, doc, text_splitter, batch_size=200):
         """Split documents into chunks and store them in a vector store."""
