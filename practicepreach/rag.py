@@ -72,7 +72,7 @@ class Rag:
 
     def add_to_vector_store(self, path_to_file: str):
         """Add new documents to the vector store from CSV file"""
-        print(f'Processing file: {path_to_file}')
+        logger.info(f'Processing file: {path_to_file}')
         time.sleep(10)
 
         loader = CSVLoader(file_path=path_to_file, metadata_columns=['date','id','party','type'])
@@ -98,7 +98,7 @@ class Rag:
     def manual_embed_and_store(self, doc, text_splitter, batch_size=10):
         all_splits = text_splitter.split_documents(doc)
         num_of_splits = len(all_splits)
-        print(f"Total chunks to embed: {num_of_splits}")
+        logger.info(f"Total chunks to embed: {num_of_splits}")
 
         for i in range(0, num_of_splits, batch_size):
             batch_docs = all_splits[i:i + batch_size]
@@ -122,7 +122,7 @@ class Rag:
         # Split the pages into chunks
         all_splits = text_splitter.split_documents(doc)
         num_of_splits = len(all_splits)
-        print(f"Total chunks to embed: {num_of_splits}")
+        logger.info(f"Total chunks to embed: {num_of_splits}")
 
         # Add the chunks to the vector store in batches
         for i in range(0, num_of_splits, batch_size):
