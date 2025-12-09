@@ -143,12 +143,18 @@ class Rag:
                                                     doctype='manifesto')
         logger.info(f"speech → {speech_docs[:5]}")
         logger.info(f"manifesto → {manifesto_docs[:5]}")
-
+        
         # Score
         # Cosine Similarity between speech and query and manifesto and query
         # TODO: Decide if we want to use it in combination with Cosine Similarity between speech and manifesto
-        avg_score_speech = sum(score for _, score in speech_docs) / len(speech_docs)
-        avg_score_manifesto = sum(score for _, score in manifesto_docs) / len(manifesto_docs)
+
+        speech_docs_len = len(speech_docs)
+        manifesto_docs_len = len(manifesto_docs)
+
+        avg_score_speech = sum(score for _, score in speech_docs) / speech_docs_len \
+                if speech_docs_len else 0
+        avg_score_manifesto = sum(score for _, score in manifesto_docs) / manifesto_docs_len \
+                if manifesto_docs_len else 0
 
         sim_speech = 1- avg_score_speech
         sim_mani = 1 - avg_score_manifesto
@@ -156,8 +162,8 @@ class Rag:
         align_score = 1 - diff
 
         # Cosine Similarity between speech and manifesto
-        cos = content_alignment_from_store(self.vector_store,speech_docs,manifesto_docs )
-
+        #cos = content_alignment_from_store(self.vector_store,speech_docs,manifesto_docs )
+        cos = 0
 
         # Summary
         speech_content = "\n\n".join(doc.page_content for doc, _ in speech_docs)
