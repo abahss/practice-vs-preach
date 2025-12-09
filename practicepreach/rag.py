@@ -18,6 +18,7 @@ from datetime import datetime
 from practicepreach.params import *
 from practicepreach.alignment import analyze_tone_differences
 from practicepreach.wahlperiode_converter import *
+from practicepreach.cosine_sim import *
 
 # Debug http calls.
 # http_client.HTTPConnection.debuglevel = 0
@@ -144,7 +145,8 @@ class Rag:
         logger.info(f"manifesto → {manifesto_docs[:5]}")
 
         # Score
-        # Similarity of how well manifesto vs speech captures the query
+        # Cosine Similarity between speech and query and manifesto and query
+        # TODO: Decide if we want to use it in combination with Cosine Similarity between speech and manifesto
         avg_score_speech = sum(score for _, score in speech_docs) / len(speech_docs)
         avg_score_manifesto = sum(score for _, score in manifesto_docs) / len(manifesto_docs)
 
@@ -152,6 +154,9 @@ class Rag:
         sim_mani = 1 - avg_score_manifesto
         diff = abs(sim_speech - sim_mani)
         align_score = 1 - diff
+
+        # Cosine Similarity between speech and manifesto
+        cos = content_alignment_from_store(self.vector_store,speech_docs,manifesto_docs )
 
 
         # Summary
@@ -163,7 +168,7 @@ class Rag:
 
         # Get the answer from the language model
         answer = self.model.invoke(prompt)
-        return (answer.content, align_score)
+        return (answer.content, cos)
 
     def shutdown(self):
         """Clean up resources if needed."""
