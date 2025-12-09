@@ -133,7 +133,7 @@ class Rag:
 
     def answer(self, query, party, start_date:datetime, end_date:datetime, prompt_template=None):
         """Answer a query using the vector store and the language model."""
-
+        
         speech_docs = self.retrieve_topic_chunks(query, party, start_date,
                                                  end_date, doctype='speech')
         manifesto_docs = self.retrieve_topic_chunks(query, party,

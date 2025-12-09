@@ -29,5 +29,7 @@ deploy: docker-build-prod docker-push-prod
 	gcloud run deploy rag-service \
     --image=$$GCP_REGION-docker.pkg.dev/$$GCP_PROJECT/$$GCP_PROJECT/$$GAR_IMAGE:$(TAG) \
     --region=europe-west10 \
+    --cpu=2 \
+    --memory=8Gi \
     --env-vars-file=env_gcloud_run.yaml
 ################################################
