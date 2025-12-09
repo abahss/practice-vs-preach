@@ -11,7 +11,6 @@ locals {
   }
 
   env_vars_dev = {
-    PERSIST_DIR   = local.env_vars.PERSIST_DIR
     DATA_CSV      = local.env_vars.DATA_CSV
     GS_URI        = local.env_vars.GS_URI
     CHROMADB_HOST = google_compute_instance.chromadb.network_interface[0].network_ip

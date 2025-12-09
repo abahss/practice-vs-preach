@@ -126,6 +126,7 @@ class Rag:
             doctype: str,
     ):
         start_date_int = int(start_date.strftime("%Y%m%d"))
+        # FIXME start_date=2025-07-21&end_date=2025-12-31 → 500 Internal Server Error
         end_date_int =int(end_date.strftime("%Y%m%d"))
 
         #ToDo: !!once the csv had a populated type column, add it here to make it queriable
