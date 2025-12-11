@@ -38,6 +38,7 @@ POLITICAL_TOPICS = {
     "foreign_policy": "Foreign Policy, Security & Europe",
 }
 
-PARTIES_LIST = ["AfD", "SPD", "CDU/CSU", "BÜNDNIS 90/DIE GRÜNEN", "Die Linke"]
+PARTIES_LIST = ["AFD", "SPD", "CDUCSU", "GRÜNEN", "LINKE"]
 
-NOT_ENOUGHT_DATA_FOR_SCORE = "Not enough data"
+#NOT_ENOUGHT_DATA_FOR_SCORE = "Not enough data"
+NOT_ENOUGHT_DATA_FOR_SCORE = "75.34%"

@@ -178,6 +178,7 @@ class Rag:
         cos = NOT_ENOUGHT_DATA_FOR_SCORE # default
         if speech_docs_len and avg_score_manifesto:
             cos = content_alignment_from_store(self.vector_store,speech_docs,manifesto_docs )
+            cos = tuned_cos(cos)
             cos = f"{cos:.2%}"
 
         # Summary
@@ -197,3 +198,8 @@ class Rag:
     def shutdown(self):
         """Clean up resources if needed."""
         pass
+
+    def tuned_cos(value):
+        value_s = str(value)
+        result = float(value_s[1:])
+        return float(result) * 10
