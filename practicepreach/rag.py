@@ -178,7 +178,7 @@ class Rag:
         cos = NOT_ENOUGHT_DATA_FOR_SCORE # default
         if speech_docs_len and avg_score_manifesto:
             cos = content_alignment_from_store(self.vector_store,speech_docs,manifesto_docs )
-            cos = f"{cos:.2%}"
+            cos = f"Alignement score: {cos:.2%}"
 
         # Summary
         speech_content = "\n\n".join(doc.page_content for doc, _ in speech_docs)
